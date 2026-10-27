@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Richer, Wiser, Happier — Interactive Book Summary</title>
+<style>
+  :root{
+    --bg:#0e1420; --bg2:#151d2e; --card:#1a2438; --card2:#202c44;
+    --gold:#e8b44c; --gold2:#f5d78e; --teal:#4ecdc4; --green:#6fcf97;
+    --red:#eb6a6a; --text:#e8edf5; --muted:#9aa7bd; --line:#2b3a57;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+  a{color:var(--teal)}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  header{background:linear-gradient(135deg,#131c2e 0%,#1b2740 60%,#243355 100%);padding:48px 0 28px;text-align:center;border-bottom:2px solid var(--gold)}
+  header h1{font-size:2.3rem;color:var(--gold2);letter-spacing:.5px}
+  header .sub{color:var(--muted);margin-top:8px;font-size:1.05rem}
+  header .byline{margin-top:4px;color:var(--text);font-weight:600}
+  .counter{display:inline-block;margin-top:14px;background:rgba(232,180,76,.12);border:1px solid var(--gold);border-radius:20px;padding:4px 16px;color:var(--gold2);font-size:.9rem}
+
+  nav{position:sticky;top:0;z-index:50;background:rgba(14,20,32,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  .tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;padding:8px 0}
+  .tab{background:none;border:none;color:var(--muted);padding:9px 16px;font-size:.95rem;cursor:pointer;border-radius:8px;font-weight:600;transition:.2s}
+  .tab:hover{color:var(--text);background:var(--card)}
+  .tab.active{color:#10131c;background:var(--gold)}
+
+  section.panel{display:none;padding:34px 0 60px;animation:fade .35s ease}
+  section.panel.show{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  h2{color:var(--gold2);font-size:1.6rem;margin-bottom:6px}
+  .lede{color:var(--muted);margin-bottom:24px;max-width:70ch}
+  h3{color:var(--teal);margin:26px 0 10px;font-size:1.15rem}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0 8px;background:var(--card);border-radius:10px;overflow:hidden;font-size:.93rem}
+  th{background:var(--card2);color:var(--gold2);text-align:left;padding:11px 13px;border-bottom:2px solid var(--gold)}
+  td{padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:rgba(78,205,196,.05)}
+  .tscroll{overflow-x:auto;border-radius:10px}
+  td b{color:var(--gold2)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+  .inv-card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:.2s}
+  .inv-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+  .inv-head{display:flex;align-items:center;gap:12px;padding:16px;cursor:pointer;user-select:none}
+  .inv-emoji{font-size:1.9rem;background:var(--card2);width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .inv-head h4{color:var(--gold2);font-size:1.05rem}
+  .inv-head .tag{color:var(--teal);font-size:.82rem}
+  .chev{margin-left:auto;color:var(--muted);transition:.25s}
+  .inv-card.open .chev{transform:rotate(180deg)}
+  .inv-body{display:none;padding:0 16px 16px;font-size:.92rem}
+  .inv-card.open .inv-body{display:block}
+  .inv-body ul{margin:8px 0 12px 18px}
+  .inv-body li{margin-bottom:7px}
+  .mini{color:var(--muted);font-size:.84rem;font-style:italic;border-left:3px solid var(--gold);padding-left:10px;margin-top:8px}
+  .lbl{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--teal);margin:10px 0 2px}
+
+  .pill{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:3px 11px;margin:3px 3px 3px 0;font-size:.82rem;color:var(--text)}
+
+  .take{background:var(--card);border-left:4px solid var(--gold);border-radius:0 10px 10px 0;padding:14px 16px;margin-bottom:12px}
+  .take b{color:var(--gold2)}
+
+  .check{display:flex;gap:11px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:9px;cursor:pointer;transition:.15s}
+  .check:hover{border-color:var(--teal)}
+  .check input{margin-top:5px;accent-color:var(--gold);width:16px;height:16px;flex-shrink:0}
+  .check.done{opacity:.55}
+  .check.done .ct{text-decoration:line-through}
+  .progressbar{height:10px;background:var(--card2);border-radius:6px;overflow:hidden;margin:6px 0 20px}
+  .progressbar>div{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));width:0;transition:.4s}
+  .pb-note{color:var(--muted);font-size:.85rem;margin-bottom:4px}
+
+  blockquote{background:var(--card);border-left:4px solid var(--teal);padding:14px 16px;border-radius:0 10px 10px 0;margin-bottom:12px;font-style:italic}
+  blockquote footer{color:var(--gold2);font-style:normal;font-size:.85rem;margin-top:6px}
+
+  /* quiz */
+  .qbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px;max-width:720px;margin:0 auto}
+  .qnum{color:var(--muted);font-size:.85rem;margin-bottom:6px}
+  .qtext{font-size:1.12rem;font-weight:600;margin-bottom:16px;color:var(--gold2)}
+  .opt{display:block;width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px 15px;margin-bottom:9px;font-size:.95rem;cursor:pointer;transition:.15s}
+  .opt:hover:not(:disabled){border-color:var(--teal)}
+  .opt.correct{border-color:var(--green);background:rgba(111,207,151,.15)}
+  .opt.wrong{border-color:var(--red);background:rgba(235,106,106,.12)}
+  .opt:disabled{cursor:default}
+  .explain{display:none;background:rgba(78,205,196,.08);border:1px dashed var(--teal);border-radius:10px;padding:12px 14px;font-size:.9rem;margin-top:4px}
+  .qnav{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
+  .btn{background:var(--gold);color:#10131c;border:none;border-radius:10px;padding:11px 24px;font-size:.95rem;font-weight:700;cursor:pointer;transition:.15s}
+  .btn:hover{background:var(--gold2)}
+  .btn.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold)}
+  .btn:disabled{opacity:.4;cursor:default}
+  .scorebig{font-size:3rem;color:var(--gold2);font-weight:800;text-align:center}
+  .verdict{text-align:center;font-size:1.15rem;margin:8px 0 18px}
+  .qmeter{height:8px;background:var(--card2);border-radius:5px;overflow:hidden;margin-bottom:20px}
+  .qmeter>div{height:100%;background:var(--teal);width:0;transition:.3s}
+  .best{text-align:center;color:var(--muted);font-size:.85rem;margin-top:12px}
+
+  .confetti{position:fixed;top:-12px;border-radius:2px;pointer-events:none;z-index:999;animation:drop linear forwards}
+  @keyframes drop{to{transform:translateY(105vh) rotate(720deg);opacity:.2}}
+
+  footer.site{border-top:1px solid var(--line);padding:26px 0;text-align:center;color:var(--muted);font-size:.85rem}
+  @media(max-width:640px){header h1{font-size:1.6rem}.tab{padding:8px 10px;font-size:.84rem}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>📘 Richer, Wiser, Happier</h1>
+    <div class="sub">How the World's Greatest Investors Win in Markets and Life</div>
+    <div class="byline">by William Green · Interactive Study Guide</div>
+    <div class="counter">👁 Views: <span id="views">—</span></div>
+  </div>
+</header>
+
+<nav><div class="wrap"><div class="tabs">
+  <button class="tab active" data-t="overview">🏠 Overview</button>
+  <button class="tab" data-t="investors">🧠 The Investors</button>
+  <button class="tab" data-t="lessons">📋 Key Lessons</button>
+  <button class="tab" data-t="takeaways">⭐ Takeaways</button>
+  <button class="tab" data-t="actions">✅ Action Steps</button>
+  <button class="tab" data-t="quotes">💬 Quotes</button>
+  <button class="tab" data-t="quiz">🎯 Mastery Quiz</button>
+</div></div></nav>
+
+<!-- ================= OVERVIEW ================= -->
+<section class="panel show" id="overview"><div class="wrap">
+  <h2>What this book is about</h2>
+  <p class="lede">William Green spent 25 years interviewing more than 40 of the world's greatest investors — Charlie Munger, John Templeton, Howard Marks, Mohnish Pabrai, Joel Greenblatt, Nick Sleep and others. His discovery: the habits that make them rich are the same habits that make life wiser and happier. Investing, done right, is a game of clear thinking, emotional discipline, patience, and self-knowledge — and its deepest payoff is freedom, not consumption.</p>
+
+  <h3>The Big Idea in One Line</h3>
+  <div class="take"><b>The greatest investors are not gamblers — they are philosophers of risk, probability, and human behavior who win by being more rational, more patient, and more honest than everyone else.</b></div>
+
+  <h3>Book Map — Chapters at a Glance</h3>
+  <div class="tscroll"><table>
+    <tr><th>Chapter</th><th>Central Investor(s)</th><th>Core Theme</th></tr>
+    <tr><td><b>Introduction: Inside the Minds of the Greatest Investors</b></td><td>Bill Miller (recurring throughout)</td><td>Pain, resilience &amp; unconventional thinking: value is future free cash flow, wherever it hides — even in Amazon and Bitcoin</td></tr>
+    <tr><td><b>1. The Man Who Cloned Warren Buffett</b></td><td>Mohnish Pabrai</td><td>Cloning: shamelessly borrow the best ideas of the best people</td></tr>
+    <tr><td><b>2. The Willingness to Be Lonely</b></td><td>Sir John Templeton</td><td>Contrarianism: buy at the point of maximum pessimism</td></tr>
+    <tr><td><b>3. Everything Changes</b></td><td>Howard Marks</td><td>Impermanence &amp; cycles: you can't predict, but you can prepare</td></tr>
+    <tr><td><b>4. The Resilient Investor</b></td><td>Jean-Marie Eveillard, Matthew McLennan</td><td>Resilience: avoid ruin first, get rich second</td></tr>
+    <tr><td><b>5. Simplicity Is the Ultimate Sophistication</b></td><td>Joel Greenblatt</td><td>Simplicity: buy good businesses cheap, keep the process simple</td></tr>
+    <tr><td><b>6. Nick &amp; Zak's Excellent Adventure</b></td><td>Nick Sleep &amp; Qais Zakaria</td><td>Quality + deferred gratification: focus on the destination, not the next mile</td></tr>
+    <tr><td><b>7. High-Performance Habits</b></td><td>Tom Gayner, Ed Thorp and others</td><td>Aggregation of marginal gains: small, sustained, directionally-correct habits</td></tr>
+    <tr><td><b>8. Don't Be a Fool</b></td><td>Charlie Munger (with Peter Kaufman)</td><td>Subtraction: win by systematically avoiding stupidity</td></tr>
+    <tr><td><b>Epilogue: Beyond Rich</b></td><td>Arnold Van Den Berg</td><td>Inner wealth: money is a means; equanimity and purpose are the prize</td></tr>
+  </table></div>
+
+  <h3>The Five Pillars Running Through Every Chapter</h3>
+  <div class="tscroll"><table>
+    <tr><th>Pillar</th><th>What it means</th><th>Who embodies it</th></tr>
+    <tr><td><b>🧬 Clone intelligently</b></td><td>Don't reinvent — study winners, reverse-engineer what works, adopt it rigorously</td><td>Pabrai</td></tr>
+    <tr><td><b>🧭 Think independently</b></td><td>Price divergence from value comes from crowd emotion; profit requires standing apart from the crowd</td><td>Templeton, Marks</td></tr>
+    <tr><td><b>🛡 Survive first</b></td><td>Compounding only works if you never get wiped out — avoid leverage, ruin, and unforced errors</td><td>Eveillard, Munger</td></tr>
+    <tr><td><b>⏳ Play long games</b></td><td>Deferred gratification is the ultimate edge; most people can't wait, so patience gets paid</td><td>Sleep &amp; Zakaria, Gayner</td></tr>
+    <tr><td><b>🪞 Master yourself</b></td><td>The market is a machine for exposing your flaws — temperament beats IQ</td><td>Munger, Van Den Berg</td></tr>
+  </table></div>
+</div></section>
+
+<!-- ================= INVESTORS ================= -->
+<section class="panel" id="investors"><div class="wrap">
+  <h2>The Investors — One by One</h2>
+  <p class="lede">Click each card to expand their philosophy, signature moves, and lessons for you.</p>
+  <div class="grid" id="invGrid"></div>
+
+  <h3>🎭 The Supporting Cast — Other Voices in the Book</h3>
+  <div class="tscroll"><table>
+    <tr><th>Investor</th><th>Known for</th><th>Their lesson in one line</th></tr>
+    <tr><td><b>Peter Kaufman</b></td><td>Glenair CEO, editor of <i>Poor Charlie's Almanack</i></td><td>Win by not losing — the "blue-chip approach": go where others aren't, never do anything that can knock you out of the game</td></tr>
+    <tr><td><b>Matthew McLennan</b></td><td>First Eagle (Eveillard's successor)</td><td>Think in terms of resilience and fault tolerance; prize businesses and portfolios that can survive being wrong</td></tr>
+    <tr><td><b>Guy Spier</b></td><td>Aquamarine Fund, <i>The Education of a Value Investor</i></td><td>Engineer your environment (location, inputs, people) so your worst instincts never get a vote</td></tr>
+    <tr><td><b>Laura Geritz</b></td><td>Rondure Global, frontier-markets explorer</td><td>Live simply, read constantly, stay far from the noise — a quiet life is an analytical edge</td></tr>
+    <tr><td><b>Jason Karp</b></td><td>Tourbillon Capital, HumanCo</td><td>Health is the foundation of performance — he nearly went blind from stress before rebuilding his life around sleep, diet and balance</td></tr>
+    <tr><td><b>Paul Lountzis</b></td><td>Lountzis Asset Management</td><td>Obsessive qualitative research — interview customers, competitors and ex-employees — and never stop learning</td></tr>
+    <tr><td><b>Pat Dorsey</b></td><td>Dorsey Asset Management, moat expert</td><td>Durable competitive advantages (network effects, switching costs, low-cost scale, intangibles) are what let compounding run</td></tr>
+    <tr><td><b>Fred Martin</b></td><td>Disciplined Growth Investors</td><td>Prepare for disaster before it strikes — checklists and pre-commitments beat improvising in a panic</td></tr>
+    <tr><td><b>Ken Shubin Stein</b></td><td>Spencer Capital, physician-investor</td><td>Use checklists and understand your own cognitive biases under stress, fatigue and emotion</td></tr>
+    <tr><td><b>Michael Price, Mason Hawkins, Bill Ruane, Irving Kahn</b></td><td>Value-investing elders interviewed across the book</td><td>Decades-long careers built on the same few principles: margin of safety, independence, patience, integrity</td></tr>
+  </table></div>
+</div></section>
+
+<!-- ================= LESSONS ================= -->
+<section class="panel" id="lessons"><div class="wrap">
+  <h2>Key Lessons — Master Table</h2>
+  <p class="lede">Every major lesson of the book, who taught it, and why it matters.</p>
+  <div class="tscroll"><table>
+    <tr><th>#</th><th>Lesson</th><th>Teacher</th><th>Why it matters</th></tr>
+    <tr><td>1</td><td><b>Clone the best</b> — study great investors and copy what works, with fidelity</td><td>Pabrai</td><td>Humility beats originality; the wheel is already invented</td></tr>
+    <tr><td>2</td><td><b>Heads I win, tails I don't lose much</b> — seek low-risk, high-uncertainty bets</td><td>Pabrai</td><td>Uncertainty scares the crowd and creates mispricing; actual risk may be low</td></tr>
+    <tr><td>3</td><td><b>Few bets, big bets, infrequent bets</b></td><td>Pabrai / Munger</td><td>Great opportunities are rare; concentrate when odds are heavily in your favor</td></tr>
+    <tr><td>4</td><td><b>Buy at the point of maximum pessimism</b></td><td>Templeton</td><td>The best bargains exist precisely when everyone else is fleeing</td></tr>
+    <tr><td>5</td><td><b>Distance yourself from the herd</b> — Templeton literally moved to the Bahamas</td><td>Templeton</td><td>Physical and mental distance from consensus improves judgment</td></tr>
+    <tr><td>6</td><td><b>Beware of your own ignorance and emotion</b> — diversify, stay humble</td><td>Templeton</td><td>Overconfidence is the most expensive trait in markets</td></tr>
+    <tr><td>7</td><td><b>Everything is cyclical and impermanent</b></td><td>Marks</td><td>Trees don't grow to the sky; euphoria and despair both pass</td></tr>
+    <tr><td>8</td><td><b>You can't predict, but you can prepare</b></td><td>Marks</td><td>Position for a range of outcomes instead of forecasting one</td></tr>
+    <tr><td>9</td><td><b>Second-level thinking</b> — ask what's already priced in</td><td>Marks</td><td>Being right isn't enough; you must be right and non-consensus</td></tr>
+    <tr><td>10</td><td><b>Respect luck</b> — outcomes mix skill and chance; judge decisions by process</td><td>Marks / Thorp</td><td>Good process + time beats lucky outcomes</td></tr>
+    <tr><td>11</td><td><b>Avoid ruin above all</b> — no leverage, margin of safety always</td><td>Eveillard</td><td>One zero multiplies everything else into zero</td></tr>
+    <tr><td>12</td><td><b>Be willing to lag and look wrong</b> — Eveillard lost half his clients refusing dot-com stocks, then was vindicated</td><td>Eveillard</td><td>Short-term pain is the admission price of long-term outperformance</td></tr>
+    <tr><td>13</td><td><b>Value investing in one sentence:</b> figure out what a business is worth and pay a lot less</td><td>Greenblatt</td><td>Everything else is detail; margin of safety is the core</td></tr>
+    <tr><td>14</td><td><b>Buy good businesses at bargain prices</b> (high return on capital + high earnings yield — the "Magic Formula")</td><td>Greenblatt</td><td>Quality and cheapness together beat either alone</td></tr>
+    <tr><td>15</td><td><b>A strategy only works if you stick with it when it hurts</b></td><td>Greenblatt</td><td>Most people abandon sound strategies at the worst time</td></tr>
+    <tr><td>16</td><td><b>Scale economies shared</b> — companies that pass savings to customers (Costco, Amazon) build unstoppable moats</td><td>Sleep &amp; Zakaria</td><td>Identifies compounding machines you can hold for decades</td></tr>
+    <tr><td>17</td><td><b>Destination analysis</b> — ask where a business will be in 10+ years, not next quarter</td><td>Sleep &amp; Zakaria</td><td>Filters out noise; focuses on information with a long shelf life</td></tr>
+    <tr><td>18</td><td><b>Deferred gratification is the master principle</b> — in investing and in life</td><td>Sleep &amp; Zakaria</td><td>Almost every good outcome comes from trading today for tomorrow</td></tr>
+    <tr><td>19</td><td><b>Aggregation of marginal gains</b> — small consistent improvements, sustained for decades</td><td>Gayner</td><td>Radical, sustainable incrementalism beats heroic sprints</td></tr>
+    <tr><td>20</td><td><b>Be directionally correct and keep going</b> — Gayner's four lenses: profitable business, honest able management, reinvestment runway, fair price</td><td>Gayner</td><td>Perfection isn't required; consistency is</td></tr>
+    <tr><td>21</td><td><b>Invert, always invert</b> — ask "what would guarantee failure?" and avoid it</td><td>Munger</td><td>It's easier to avoid stupidity than to achieve brilliance</td></tr>
+    <tr><td>22</td><td><b>Collect examples of folly</b> — envy, resentment, self-pity, ideology, leverage and ego destroy more wealth than bad math</td><td>Munger</td><td>Standard stupidities are predictable, hence avoidable</td></tr>
+    <tr><td>23</td><td><b>Keep an inner scorecard</b> — judge yourself by your standards, not applause</td><td>Buffett via Sleep/Pabrai</td><td>Immunity to peer pressure is an investing superpower</td></tr>
+    <tr><td>24</td><td><b>Money's real dividend is freedom</b> — autonomy over your time, work, and associations</td><td>Entire book</td><td>Rich without wise and happy is a failed trade</td></tr>
+    <tr><td>25</td><td><b>Inner wealth is the final frontier</b> — Van Den Berg survived the Holocaust, rebuilt his mind with self-education, and found equanimity worth more than money</td><td>Van Den Berg</td><td>Your mind is the ultimate compounding asset</td></tr>
+    <tr><td>26</td><td><b>Value = future free cash flows, not a low P/E</b> — Amazon (and later Bitcoin) could be "value" when price understated future cash generation or optionality</td><td>Bill Miller</td><td>Frees you from labels; unconventional ≠ wrong</td></tr>
+    <tr><td>27</td><td><b>No pain, no gain</b> — Miller's 2008 wipeout, divorce and illness preceded one of history's great comebacks</td><td>Bill Miller</td><td>Drawdowns and humiliation are survivable; quitting is not</td></tr>
+    <tr><td>28</td><td><b>Know your edge and size your bets</b> — only play games with a measurable advantage, staked so no loss can ruin you</td><td>Ed Thorp</td><td>No edge = you're the casino's customer, not the house</td></tr>
+    <tr><td>29</td><td><b>Stocks follow earnings</b> — back companies likely to double earnings in five years, run by driven, honest operators</td><td>Will Danoff</td><td>A one-line thesis and relentless effort beat complexity</td></tr>
+  </table></div>
+</div></section>
+
+<!-- ================= TAKEAWAYS ================= -->
+<section class="panel" id="takeaways"><div class="wrap">
+  <h2>Key Takeaways &amp; Points to Remember</h2>
+  <p class="lede">The distilled essence — if you remember nothing else, remember these.</p>
+
+  <h3>🧠 On Thinking</h3>
+  <div class="take"><b>Temperament beats IQ.</b> The winners aren't the smartest; they're the most rational under pressure. Markets transfer money from the impatient and emotional to the patient and disciplined.</div>
+  <div class="take"><b>Think in probabilities, not certainties.</b> Marks and Thorp treat investing as decision-making under uncertainty: judge every decision by expected value and process quality, not by a single outcome.</div>
+  <div class="take"><b>Second-level thinking:</b> "It's a good company" is first-level. "It's a good company, but everyone thinks so, so it's overpriced" is second-level. Only the latter earns excess returns.</div>
+
+  <h3>🛡 On Risk</h3>
+  <div class="take"><b>Rule #1 is survival.</b> Avoid leverage, avoid ruin, avoid permanent loss of capital. As Eveillard put it: to finish first, you must first finish.</div>
+  <div class="take"><b>Margin of safety is the central concept of investing.</b> Pay far less than your estimate of value so you can be wrong and still be okay.</div>
+  <div class="take"><b>Risk is highest when it feels lowest.</b> Euphoria breeds carelessness; pessimism breeds bargains. Lean against the prevailing mood.</div>
+
+  <h3>⏳ On Time</h3>
+  <div class="take"><b>Time is the honest investor's unfair advantage.</b> Nick Sleep's Nomad fund returned ~921% vs the market's ~117% largely by holding great compounders (Amazon, Costco, Berkshire) and refusing to trade.</div>
+  <div class="take"><b>Deferred gratification shows up everywhere:</b> saving over spending, studying over scrolling, holding over flipping, reputation over shortcuts.</div>
+
+  <h3>🪞 On Self</h3>
+  <div class="take"><b>Subtract before you add.</b> Munger's method: eliminate standard stupidities — envy, resentment, self-pity, overtrading, following the crowd, ideology — and you're ahead of 95% of people.</div>
+  <div class="take"><b>Keep an inner scorecard.</b> The willingness to look wrong, lag the market, and be lonely is the emotional price of outperformance. If you can't pay it, index.</div>
+  <div class="take"><b>Wealth is a means, not an end.</b> The happiest investors in the book treat money as a tool for freedom, generosity, and growth — Pabrai's Dakshana Foundation, Templeton's philanthropy, Sleep's quiet giving.</div>
+
+  <h3>📌 Quick-Recall Card</h3>
+  <div>
+    <span class="pill">Clone the best 🧬</span><span class="pill">Max pessimism = max opportunity 📉➡️📈</span>
+    <span class="pill">Cycles always turn 🔄</span><span class="pill">Prepare, don't predict 🌦</span>
+    <span class="pill">No leverage 🚫</span><span class="pill">Margin of safety 🛡</span>
+    <span class="pill">Good + cheap 💎</span><span class="pill">Scale economies shared 🏪</span>
+    <span class="pill">Destination &gt; next mile 🗺</span><span class="pill">Marginal gains daily 📈</span>
+    <span class="pill">Invert, always invert 🔁</span><span class="pill">Inner scorecard 🪞</span>
+    <span class="pill">Patience gets paid ⏳</span><span class="pill">Freedom is the dividend 🕊</span>
+  </div>
+</div></section>
+
+<!-- ================= ACTIONS ================= -->
+<section class="panel" id="actions"><div class="wrap">
+  <h2>Action Steps for the Investor</h2>
+  <p class="lede">Turn the book into behavior. Check items off as you adopt them — your progress is saved on this device.</p>
+  <div class="pb-note"><span id="apct">0%</span> adopted</div>
+  <div class="progressbar"><div id="abar"></div></div>
+  <div id="actionList"></div>
+</div></section>
+
+<!-- ================= QUOTES ================= -->
+<section class="panel" id="quotes"><div class="wrap">
+  <h2>Memorable Quotes</h2>
+  <p class="lede">Lines worth pinning above your desk.</p>
+  <blockquote>"Take a simple idea and take it seriously."<footer>— Charlie Munger</footer></blockquote>
+  <blockquote>"The bull market is born on pessimism, grows on skepticism, matures on optimism, and dies on euphoria."<footer>— Sir John Templeton</footer></blockquote>
+  <blockquote>"You can't predict. You can prepare."<footer>— Howard Marks</footer></blockquote>
+  <blockquote>"Heads I win; tails I don't lose much."<footer>— Mohnish Pabrai's bet filter</footer></blockquote>
+  <blockquote>"It's not supposed to be easy. Anyone who finds it easy is stupid."<footer>— Charlie Munger</footer></blockquote>
+  <blockquote>"The biggest risk is not volatility — it's permanent loss of capital."<footer>— The Eveillard doctrine</footer></blockquote>
+  <blockquote>"Figure out what something is worth and pay a lot less."<footer>— Joel Greenblatt's definition of value investing</footer></blockquote>
+  <blockquote>"The trick is not to be the hottest stock-picker or the best forecaster. It's to be around at the end."<footer>— The resilience theme, Ch. 4</footer></blockquote>
+  <blockquote>"If you can't take short-term pain, you won't capture long-term gain."<footer>— The Bill Miller lesson</footer></blockquote>
+  <blockquote>"The first rule is: don't play games you can't win. Find where you have an edge."<footer>— The Ed Thorp doctrine</footer></blockquote>
+  <blockquote>"Quality of life beats quantity of money."<footer>— The book's closing message</footer></blockquote>
+</div></section>
+
+<!-- ================= QUIZ ================= -->
+<section class="panel" id="quiz"><div class="wrap">
+  <h2>🎯 Mastery Quiz</h2>
+  <p class="lede">18 questions. Score 80%+ to prove the concepts have stuck. Explanations appear after each answer.</p>
+  <div class="qbox" id="qbox"></div>
+</div></section>
+
+<footer class="site"><div class="wrap">
+  Study guide based on <i>Richer, Wiser, Happier</i> by William Green (Scribner, 2021). Made for personal learning. Buy the book — it's worth it.
+</div></footer>
+
+<script>
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.t).classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}));
+
+/* ---------- views counter (abacus free counter API, GitHub Pages friendly) ---------- */
+(function(){
+  var el=document.getElementById('views');
+  fetch('https://abacus.jasoncameron.dev/hit/rwh-book-summary-fs/views')
+    .then(r=>r.json()).then(d=>{el.textContent=(d.value||1).toLocaleString();})
+    .catch(function(){
+      try{var v=(parseInt(localStorage.getItem('rwh_views')||'0',10)+1);
+        localStorage.setItem('rwh_views',v); el.textContent=v+' (local)';}
+      catch(e){el.textContent='∞';}
+    });
+})();
+
+/* ---------- investors ---------- */
+const INVESTORS=[
+ {e:'🧬',n:'Mohnish Pabrai',t:'The Cloner · Pabrai Funds',
+  phil:'Shamelessly clone proven winners. Pabrai reverse-engineered Buffett and Munger, paid $650,100 for a charity lunch with Buffett, and built his fund on borrowed principles applied with total discipline.',
+  moves:['Clone best ideas, best practices, even fee structures (he copied the original Buffett partnership: no fee until 6% return).','Hunt for "low-risk, high-uncertainty" bets — the crowd confuses uncertainty with risk, creating bargains.','Make few bets, big bets, infrequent bets. Inaction is a position.','Be fanatically truthful — lying corrodes judgment and reputation.'],
+  you:'You don’t need original ideas. You need the humility to copy great ones and the discipline to actually follow them.',
+  fun:'Gave back through the Dakshana Foundation, cloning even his philanthropy model from efficient charities.'},
+ {e:'🧭',n:'Sir John Templeton',t:'The Contrarian · Templeton Growth Fund',
+  phil:'The only way to get a bargain is to buy what others are desperately selling. In 1939, as WWII began, he bought every NYSE-listed stock under $1 — 104 companies — and multiplied his money several times over.',
+  moves:['Buy at the point of maximum pessimism; sell at maximum optimism.','Move away from the herd — he literally relocated to the Bahamas and beat Wall Street from the beach.','Diversify across countries and assets: insurance against your own ignorance.','Guard against emotion and overconfidence — your worst enemy is in the mirror.'],
+  you:'Ask constantly: where is the outlook most miserable? That is where to start your research, not where to stop it.',
+  fun:'Spent his later life funding research into "spiritual wealth" — he considered gratitude and love better investments than stocks.'},
+ {e:'🔄',n:'Howard Marks',t:'The Cycle Master · Oaktree Capital',
+  phil:'Nothing lasts. Markets swing like a pendulum between greed and fear, and the odds change as the pendulum moves. Wisdom is knowing roughly where you are in the cycle and calibrating aggression accordingly.',
+  moves:['You can’t predict, you can prepare: build portfolios for a range of futures.','Second-level thinking: it’s not whether an asset is good, it’s whether it’s good relative to its price and expectations.','Respect luck — judge decisions by process, not outcome.','Get greedy when others are fearful: Oaktree deployed billions into debt during the 2008 panic.'],
+  you:'When you can’t find bargains, the cycle is telling you something. Patience and cash are positions too.',
+  fun:'His client memos were praised by Buffett: "When I see memos from Howard Marks in my mail, they’re the first thing I open."'},
+ {e:'🛡',n:'Jean-Marie Eveillard',t:'The Survivor · First Eagle / SoGen',
+  phil:'The first rule is to avoid catastrophic loss. Eveillard refused to own dot-com stocks in 1999, lost half his investors, was mocked — and then was spectacularly vindicated when the bubble burst.',
+  moves:['Never use leverage; it turns temporary mistakes into permanent ruin.','Always demand a margin of safety.','Accept lagging the crowd in manias — short-term pain for long-term survival.','Hold humility assets (he liked gold) as insurance against the unknown.'],
+  you:'Ask of every decision: "What if I’m wrong?" Build a portfolio — and a life — that survives your own errors.',
+  fun:'His successor Matthew McLennan frames it as resilience thinking: compound by not interrupting compounding.'},
+ {e:'💎',n:'Joel Greenblatt',t:'The Simplifier · Gotham Capital',
+  phil:'Returned roughly 50% annualized for a decade, then distilled investing to one sentence: figure out what a business is worth and pay a lot less. His "Magic Formula" buys good businesses (high return on capital) at cheap prices (high earnings yield).',
+  moves:['Value the business, not the ticker. A share is partial ownership of real cash flows.','Combine quality AND cheapness — either alone is weaker.','Keep it simple enough to stick with when it underperforms (and every strategy sometimes does).','Special situations and overlooked corners hold the biggest mispricings.'],
+  you:'The strategy you can hold through pain beats the "optimal" strategy you’ll abandon. Simplicity is a behavioral edge.',
+  fun:'Taught his method at Columbia and wrote books so simple his kids could use them — on purpose.'},
+ {e:'🗺',n:'Nick Sleep & Qais Zakaria',t:'The Destination Thinkers · Nomad Partnership',
+  phil:'Nomad returned ~921% (vs ~117% for the market) by asking one question: what is this company’s destination in 10–20 years? They found "scale economies shared" — Costco and Amazon passing savings back to customers — to be the most powerful business model on earth.',
+  moves:['Focus on information with a long shelf life; ignore quarterly noise.','Scale economies shared: lower prices → more customers → more scale → lower prices. A flywheel competitors can’t break.','Concentrate in a handful of great businesses and let them compound untouched.','Deferred gratification in everything — fees, trading, consumption, reputation.'],
+  you:'Before buying, write down where the business will be in a decade. If you can’t, you’re speculating, not investing.',
+  fun:'At the peak, they closed the fund, returned investors’ money, and retired to quiet lives of philanthropy — the inner scorecard in action.'},
+ {e:'📈',n:'Tom Gayner',t:'The Incrementalist · Markel',
+  phil:'Success is the aggregation of marginal gains: being directionally correct and consistent, forever. Not the most brilliant — the most reliable. He compares investing discipline to diet: it’s what you do every day, not once.',
+  moves:['Four lenses for stocks: (1) profitable business with good returns on capital and little leverage, (2) management with talent AND integrity, (3) reinvestment opportunities, (4) a fair price.','Keep saving and investing continuously — "radical incrementalism."','Never bet the company; stay in the game so compounding can work.','Match your investing style to your temperament so you can sustain it.'],
+  you:'Stop seeking home runs. A sustained, slightly-better-than-average process compounds into an extraordinary outcome.',
+  fun:'Both talent and integrity are required in management: "talent without integrity is a disaster — you’re better off with a lazy crook."'},
+ {e:'🔁',n:'Charlie Munger',t:'The Subtractor · Berkshire Hathaway',
+  phil:'It is remarkable how much long-term advantage people like us have gotten by trying to be consistently not stupid, instead of trying to be very intelligent. Munger inverts every problem: to be happy, study what causes misery; to win, catalog what guarantees loss — then avoid it.',
+  moves:['Invert, always invert: "All I want to know is where I’m going to die, so I’ll never go there."','Collect examples of folly — envy, resentment, self-pity, ideology, leverage, overtrading — and design your life to dodge them.','Use a latticework of mental models from many disciplines.','Sit on cash for years, then bet massively when the odds are obvious.'],
+  you:'Make an anti-checklist: list the standard ways investors destroy themselves, and review it before every decision.',
+  fun:'His partner-in-wisdom Peter Kaufman calls this "the blue-chip approach to life": win by not losing.'},
+ {e:'🔥',n:'Bill Miller',t:'The Unconventional Contrarian · Legg Mason / Miller Value Partners',
+  phil:'Beat the S&P 500 fifteen consecutive years (1991–2005) by redefining value: a business is worth the present value of its future free cash flows — not its P/E ratio. That let him buy "expensive-looking" Amazon, Dell and AOL when classic value investors scoffed, and later make one of the earliest large Bitcoin bets among famous investors.',
+  moves:['Value lives wherever price diverges from future cash generation — growth stocks and even Bitcoin can be "value."','Trained in philosophy (William James’s pragmatism, Wittgenstein): judge ideas by whether they work, not whether they’re orthodox.','Bet big when conviction is high — Amazon became a massive position he rode for decades.','Absorb pain and persist: his 2008 collapse (betting on financials) cost billions and his reputation; he rebuilt, and his comeback bets made him wealthier than ever.'],
+  you:'Don’t confuse "statistically cheap" with value, or "unconventional" with wrong. And expect brutal drawdowns on the road to great returns — no pain, no gain.',
+  fun:'He suffered the 2008 humiliation, a divorce and crippling back pain almost at once — and credits Stoic and Buddhist reading for the equanimity to keep going. He later put a large share of his personal net worth into Bitcoin and Amazon.'},
+ {e:'🎲',n:'Ed Thorp',t:'The Odds Master · Princeton Newport Partners',
+  phil:'The MIT math professor who beat blackjack (Beat the Dealer), invented card counting, then beat Wall Street with the first great quant fund — roughly 20% a year for nearly two decades without a single losing year. Investing, to Thorp, is simply decision-making under uncertainty: find the edge, size the bet, control the risk.',
+  moves:['Only play games where you have a measurable edge; otherwise don’t play.','Size bets rationally (Kelly-style): big enough to matter, never big enough to ruin you.','Judge decisions by process and odds, not single outcomes.','Guard your health like capital — in his 80s he still trained relentlessly, treating fitness as compounding for the body.'],
+  you:'Ask of every investment: what exactly is my edge, and what do I stake if I’m wrong? No identifiable edge = you’re the house’s customer.',
+  fun:'He detected Bernie Madoff’s fraud in 1991 — seventeen years before the world did — simply by checking whether the reported trades were possible.'},
+ {e:'⚡',n:'Will Danoff',t:'The Workhorse · Fidelity Contrafund',
+  phil:'Ran more money in one fund than almost anyone alive and still beat the market, armed with a simple creed: stocks follow earnings. Find the companies that will double earnings in five years, back the best managements, and outwork everyone — he’s met thousands of management teams, hunting for the handful of truly exceptional ones.',
+  moves:['Keep the thesis simple enough to fit in one line in his notebook.','Bet on founders and managers with energy, drive and skin in the game.','Let winners run — he was an early, patient holder of Berkshire-style compounders and Facebook’s IPO.','Grind: relentless daily effort is itself a durable edge.'],
+  you:'Earnings power drives stock prices over time. Ask: will this company be bigger and better in five years — and who’s driving the bus?',
+  fun:'His edge is almost embarrassingly unglamorous: he simply works harder, meets more companies, and takes better notes than nearly anyone in the industry.'},
+ {e:'🕊',n:'Arnold Van Den Berg',t:'Beyond Rich · Century Management (Epilogue)',
+  phil:'A Holocaust survivor who arrived at adulthood traumatized and undereducated, Van Den Berg rebuilt himself through relentless self-education, visualization, and discipline — and became a top-performing money manager. His conclusion: the inner game is everything.',
+  moves:['Your self-image sets your ceiling; upgrade it deliberately.','Adversity can be converted into fuel: he called his suffering his greatest teacher.','True wealth = equanimity, purpose, gratitude, and service.','Money is a wonderful servant and a terrible master.'],
+  you:'Compound your mind and character with the same seriousness as your portfolio. That’s the richer, wiser, happier trifecta.',
+  fun:'He kept studying and refining himself into his 80s — a learning machine to the end.'}
+];
+const grid=document.getElementById('invGrid');
+INVESTORS.forEach(v=>{
+  const c=document.createElement('div');c.className='inv-card';
+  c.innerHTML='<div class="inv-head"><div class="inv-emoji">'+v.e+'</div><div><h4>'+v.n+'</h4><div class="tag">'+v.t+'</div></div><div class="chev">▼</div></div>'+
+  '<div class="inv-body"><span class="lbl">Philosophy</span><p>'+v.phil+'</p><span class="lbl">Signature Moves</span><ul>'+v.moves.map(m=>'<li>'+m+'</li>').join('')+'</ul><span class="lbl">Lesson for you</span><p>'+v.you+'</p><div class="mini">'+v.fun+'</div></div>';
+  c.querySelector('.inv-head').addEventListener('click',()=>c.classList.toggle('open'));
+  grid.appendChild(c);
+});
+
+/* ---------- action checklist ---------- */
+const ACTIONS=[
+ ['🧬','Pick 2–3 great investors and study them deeply — letters, interviews, portfolios. Clone what fits your temperament.'],
+ ['📓','Write a one-page investment checklist (and an anti-checklist of standard stupidities) and review it before every buy or sell.'],
+ ['🛡','Eliminate leverage from your investing. Decide your maximum tolerable loss before you invest, not after.'],
+ ['💎','For each holding, write the business’s value and your margin of safety in one sentence. Can’t? Don’t own it.'],
+ ['🗺','Do a destination analysis: where will this business be in 10 years? Prefer information with a long shelf life.'],
+ ['📉','Keep a watchlist of great businesses and pre-commit to buying during panics — when pessimism is at its maximum.'],
+ ['⏳','Cut your trading frequency. Default to inaction; make few, big, infrequent bets within your competence.'],
+ ['🔄','Locate yourself in the cycle each quarter: are people euphoric or fearful? Calibrate aggression accordingly — prepare, don’t predict.'],
+ ['📈','Automate saving and investing monthly — aggregation of marginal gains, applied to your own cash flow.'],
+ ['🪞','Keep a decision journal: record your thesis and emotional state at every decision; grade the process, not just the outcome.'],
+ ['🤫','Reduce noise: mute financial TV, hot tips, and price-checking. Create your own Bahamas of quiet thinking time.'],
+ ['📚','Become a learning machine: read daily across disciplines, building Munger-style mental models.'],
+ ['🤝','Guard your integrity and choose honest partners — reputation compounds like capital.'],
+ ['🕊','Define "enough." Direct money toward freedom, relationships, and generosity — the actual point of the game.']
+];
+const AL=document.getElementById('actionList');
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
+let saved={};try{saved=JSON.parse(store('rwh_actions')||'{}')}catch(e){}
+ACTIONS.forEach((a,i)=>{
+  const d=document.createElement('label');d.className='check'+(saved[i]?' done':'');
+  d.innerHTML='<input type="checkbox" '+(saved[i]?'checked':'')+'><div class="ct"><b>'+a[0]+'</b> '+a[1]+'</div>';
+  d.querySelector('input').addEventListener('change',e=>{saved[i]=e.target.checked;d.classList.toggle('done',e.target.checked);store('rwh_actions',JSON.stringify(saved));bar();});
+  AL.appendChild(d);
+});
+function bar(){const n=Object.values(saved).filter(Boolean).length,p=Math.round(n/ACTIONS.length*100);
+  document.getElementById('abar').style.width=p+'%';document.getElementById('apct').textContent=p+'%';}
+bar();
+
+/* ---------- quiz ---------- */
+const QUIZ=[
+ {q:'Mohnish Pabrai built his investing success primarily on which principle?',o:['Inventing novel quantitative models','Shamelessly cloning proven ideas from great investors','High-frequency trading','Macro forecasting'],a:1,x:'Pabrai reverse-engineered Buffett and Munger and applied their principles with uncommon discipline. Humility to copy beats the vanity of originality.'},
+ {q:'Pabrai’s favorite type of bet is best described as:',o:['High-risk, high-uncertainty','Low-risk, low-uncertainty','Low-risk, high-uncertainty','High-risk, low-uncertainty'],a:2,x:'The crowd confuses uncertainty with risk and flees, creating bargains where the actual downside is small: "Heads I win; tails I don’t lose much."'},
+ {q:'What did John Templeton famously do in 1939 at the outbreak of WWII?',o:['Sold all his stocks and bought gold','Bought every NYSE stock trading under $1','Moved his fund to Switzerland','Shorted the US market'],a:1,x:'He bought 104 stocks under $1 at the point of maximum pessimism — and multiplied his money several times over.'},
+ {q:'Why did Templeton move to the Bahamas?',o:['Lower taxes only','To distance himself from Wall Street’s herd thinking','To retire from investing','Better weather for his health'],a:1,x:'Distance from consensus — physical and mental — helped him think independently. His performance improved after he left Wall Street.'},
+ {q:'Howard Marks’ core advice about the future is:',o:['Forecast precisely and act boldly','You can’t predict, but you can prepare','Ignore macro conditions entirely','Always be fully invested'],a:1,x:'Instead of betting on one forecast, position yourself to survive and benefit across a range of outcomes, calibrated to where we are in the cycle.'},
+ {q:'Second-level thinking means:',o:['Thinking twice before trading','Analyzing a company’s second-tier management','Asking what’s already priced in and where the consensus is wrong','Using two valuation models'],a:2,x:'First-level: "great company, buy it." Second-level: "great company, but everyone agrees, so it’s overpriced." Returns come from being right AND non-consensus.'},
+ {q:'Jean-Marie Eveillard lost half his investors in the late 1990s because he:',o:['Had a huge position in Enron','Refused to buy overpriced dot-com stocks','Used too much leverage','Closed his fund to new money'],a:1,x:'He accepted looking wrong and lagging during the mania. When the bubble burst, his resilience-first approach was spectacularly vindicated.'},
+ {q:'The "first rule" of the resilient investor is:',o:['Maximize returns every year','Avoid ruin and permanent loss of capital','Diversify into at least 100 stocks','Always hold 50% cash'],a:1,x:'Compounding only works if it’s never interrupted by catastrophe. No leverage, margin of safety, humility about what you don’t know.'},
+ {q:'Joel Greenblatt’s one-sentence definition of value investing:',o:['Buy what’s falling and sell what’s rising','Figure out what a business is worth and pay a lot less','Buy the market and hold forever','Follow the smart money'],a:1,x:'Everything else is implementation detail. The gap between price and value — the margin of safety — is the whole game.'},
+ {q:'Greenblatt’s Magic Formula combines which two factors?',o:['Momentum and volume','High return on capital and high earnings yield','Dividend yield and low beta','Revenue growth and insider buying'],a:1,x:'Good businesses (high return on capital) at cheap prices (high earnings yield). Quality plus cheapness beats either alone.'},
+ {q:'Nick Sleep’s favorite business model, "scale economies shared," means:',o:['Merging with competitors to gain scale','Sharing offices to cut costs','Passing scale savings back to customers to deepen the moat','Franchising aggressively'],a:2,x:'Costco and Amazon give efficiency gains back as lower prices → more customers → more scale → an unbreakable flywheel.'},
+ {q:'"Destination analysis" asks:',o:['Where will the stock price be next quarter?','Where will this business be in 10–20 years?','Which country to emigrate to for taxes','When to exit the position'],a:1,x:'Sleep and Zakaria focused on information with a long shelf life and ignored quarterly noise — then held their compounders for decades.'},
+ {q:'Tom Gayner’s approach is called the "aggregation of marginal gains," meaning:',o:['Buy many tiny positions','Small, consistent, directionally-correct improvements sustained over decades','Use options for extra yield','Rebalance daily'],a:1,x:'Like diet and exercise: unspectacular daily discipline — in saving, investing, and habits — compounds into an extraordinary result.'},
+ {q:'Charlie Munger’s signature mental move is:',o:['Prediction','Extrapolation','Inversion — figure out what guarantees failure and avoid it','Diversification'],a:2,x:'"All I want to know is where I’m going to die, so I’ll never go there." Avoiding standard stupidity beats seeking brilliance.'},
+ {q:'Bill Miller beat the S&P 500 for fifteen straight years by defining value as:',o:['Stocks with the lowest P/E ratios','The present value of a business’s future free cash flows — wherever it hides','Companies paying high dividends','Stocks trading below book value'],a:1,x:'That definition let him buy "expensive-looking" Amazon, Dell and AOL — and later make an early, large Bitcoin bet — while orthodox value investors scoffed.'},
+ {q:'What does Bill Miller’s story in the book chiefly illustrate?',o:['Diversification eliminates risk','Resilience: his 2008 collapse was followed by one of history’s great comebacks','Market timing works','Never change your strategy'],a:1,x:'He lost billions and his reputation in 2008, endured divorce and illness — then rebuilt his fortune with conviction bets on Amazon and Bitcoin. No pain, no gain.'},
+ {q:'Ed Thorp’s core rule, from blackjack tables to Wall Street:',o:['Bet everything when you feel lucky','Only play when you have a measurable edge, and size bets so no loss can ruin you','Follow the biggest players’ moves','Avoid mathematics in investing'],a:1,x:'Edge + rational bet sizing + process over outcomes gave his fund ~20% a year for nearly two decades without a losing year. He even spotted Madoff’s fraud in 1991.'},
+ {q:'The book’s ultimate message about money is:',o:['More is always better','Money is a means to freedom, wisdom and generosity — not the end itself','Only real estate creates lasting wealth','Happiness and investing are unrelated'],a:1,x:'From Pabrai’s Dakshana Foundation to Sleep’s quiet philanthropy to Van Den Berg’s inner wealth: the richest payoff is a free, calm, purposeful life.'}
+];
+let qi=0,score=0,answered=false;
+const qbox=document.getElementById('qbox');
+function best(){return parseInt(store('rwh_best')||'0',10)||0;}
+function renderQ(){
+  answered=false;const q=QUIZ[qi];
+  qbox.innerHTML='<div class="qmeter"><div style="width:'+(qi/QUIZ.length*100)+'%"></div></div>'+
+  '<div class="qnum">Question '+(qi+1)+' of '+QUIZ.length+' · Score: '+score+'</div>'+
+  '<div class="qtext">'+q.q+'</div>'+
+  q.o.map((o,i)=>'<button class="opt" data-i="'+i+'">'+String.fromCharCode(65+i)+'. '+o+'</button>').join('')+
+  '<div class="explain" id="exp">💡 '+q.x+'</div>'+
+  '<div class="qnav"><span></span><button class="btn" id="nextB" disabled>'+(qi===QUIZ.length-1?'See Results →':'Next →')+'</button></div>';
+  qbox.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+    if(answered)return;answered=true;
+    const i=+b.dataset.i;
+    qbox.querySelectorAll('.opt').forEach(x=>x.disabled=true);
+    qbox.querySelectorAll('.opt')[q.a].classList.add('correct');
+    if(i===q.a){score++;}else{b.classList.add('wrong');}
+    document.getElementById('exp').style.display='block';
+    const nb=document.getElementById('nextB');nb.disabled=false;
+    qbox.querySelector('.qnum').textContent='Question '+(qi+1)+' of '+QUIZ.length+' · Score: '+score;
+  }));
+  document.getElementById('nextB').addEventListener('click',()=>{qi++;qi<QUIZ.length?renderQ():renderResult();});
+}
+function renderResult(){
+  const pct=Math.round(score/QUIZ.length*100);
+  if(pct>best())store('rwh_best',pct);
+  let v,msg;
+  if(pct>=80){v='🏆 Mastered!';msg='The concepts have stuck. You think like the greats — now act like them.';confetti();}
+  else if(pct>=50){v='📈 Getting there';msg='Solid foundation. Revisit the Key Lessons tab and retake the quiz.';}
+  else{v='📚 Re-read time';msg='Go back through the Investors and Takeaways tabs — then try again.';}
+  qbox.innerHTML='<div class="scorebig">'+score+' / '+QUIZ.length+'</div>'+
+  '<div class="verdict">'+v+' ('+pct+'%)<br><span style="color:var(--muted);font-size:.95rem">'+msg+'</span></div>'+
+  '<div style="text-align:center"><button class="btn" id="retry">↻ Retake Quiz</button> <button class="btn ghost" id="review">Review Lessons</button></div>'+
+  '<div class="best">Best score on this device: '+best()+'%</div>';
+  document.getElementById('retry').addEventListener('click',()=>{qi=0;score=0;renderQ();});
+  document.getElementById('review').addEventListener('click',()=>{document.querySelector('[data-t="lessons"]').click();});
+}
+function confetti(){
+  const cols=['#e8b44c','#4ecdc4','#6fcf97','#f5d78e','#eb6a6a','#7ea6ff'];
+  for(let i=0;i<120;i++){const d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'vw';d.style.width=d.style.height=(6+Math.random()*7)+'px';
+    d.style.background=cols[i%cols.length];d.style.animationDuration=(2.3+Math.random()*2.5)+'s';
+    d.style.animationDelay=(Math.random()*0.8)+'s';document.body.appendChild(d);
+    setTimeout(()=>d.remove(),6200);}
+}
+renderQ();
+</script>
+</body>
+</html>
